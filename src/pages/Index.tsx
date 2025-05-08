@@ -1,53 +1,109 @@
-import React from "react";
+
+import React, { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import MusicPlayer from "../components/MusicPlayer";
 import MusicReleases from "../components/MusicReleases";
 import { Button } from "@/components/ui/button";
 import { CalendarDays } from "lucide-react";
 import { Link } from "react-router-dom";
+
 const Index = () => {
-  // Mock data - would be replaced with real data from an API
-  const tracks = [{
-    id: 1,
-    title: "Midnight Symphony",
-    duration: "3:45",
-    coverArt: "/placeholder.svg"
-  }, {
-    id: 2,
-    title: "Electric Dreams",
-    duration: "4:12",
-    coverArt: "/placeholder.svg"
-  }, {
-    id: 3,
-    title: "Ocean Waves",
-    duration: "3:21",
-    coverArt: "/placeholder.svg"
-  }];
-  const releases = [{
-    id: 1,
-    title: "Neon Nights",
-    releaseDate: "May 2025",
-    coverArt: "/placeholder.svg",
-    tracks: 4
-  }, {
-    id: 2,
-    title: "Digital Dreamscape",
-    releaseDate: "January 2025",
-    coverArt: "/placeholder.svg",
-    tracks: 6
-  }, {
-    id: 3,
-    title: "First Light",
-    releaseDate: "October 2024",
-    coverArt: "/placeholder.svg",
-    tracks: 5
-  }];
-  const latestUpdate = {
+  // State for tracks, releases, and latest update
+  const [tracks, setTracks] = useState(() => {
+    const savedTracks = localStorage.getItem('tracks');
+    return savedTracks ? JSON.parse(savedTracks) : [
+      {
+        id: 1,
+        title: "Midnight Symphony",
+        duration: "3:45",
+        coverArt: "/placeholder.svg"
+      },
+      {
+        id: 2,
+        title: "Electric Dreams",
+        duration: "4:12",
+        coverArt: "/placeholder.svg"
+      },
+      {
+        id: 3,
+        title: "Ocean Waves",
+        duration: "3:21",
+        coverArt: "/placeholder.svg"
+      }
+    ];
+  });
+
+  const [releases, setReleases] = useState(() => {
+    const savedReleases = localStorage.getItem('releases');
+    return savedReleases ? JSON.parse(savedReleases) : [
+      {
+        id: 1,
+        title: "Neon Nights",
+        releaseDate: "May 2025",
+        coverArt: "/placeholder.svg",
+        tracks: 4
+      },
+      {
+        id: 2,
+        title: "Digital Dreamscape",
+        releaseDate: "January 2025",
+        coverArt: "/placeholder.svg",
+        tracks: 6
+      },
+      {
+        id: 3,
+        title: "First Light",
+        releaseDate: "October 2024",
+        coverArt: "/placeholder.svg",
+        tracks: 5
+      }
+    ];
+  });
+
+  const [latestUpdate, setLatestUpdate] = useState({
     title: "New Album Coming Soon",
     date: "May 5, 2025",
     content: "I'm excited to announce that my new album will be released next month. Stay tuned for more updates!"
-  };
-  return <Layout>
+  });
+
+  // Load latest update from localStorage
+  useEffect(() => {
+    const savedUpdates = localStorage.getItem('updates');
+    if (savedUpdates) {
+      const updates = JSON.parse(savedUpdates);
+      if (updates.length > 0) {
+        // Sort by id in descending order to get the most recent update
+        const sortedUpdates = [...updates].sort((a, b) => b.id - a.id);
+        setLatestUpdate(sortedUpdates[0]);
+      }
+    }
+  }, []);
+
+  // Listen for localStorage changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedTracks = localStorage.getItem('tracks');
+      if (savedTracks) setTracks(JSON.parse(savedTracks));
+      
+      const savedReleases = localStorage.getItem('releases');
+      if (savedReleases) setReleases(JSON.parse(savedReleases));
+      
+      const savedUpdates = localStorage.getItem('updates');
+      if (savedUpdates) {
+        const updates = JSON.parse(savedUpdates);
+        if (updates.length > 0) {
+          const sortedUpdates = [...updates].sort((a, b) => b.id - a.id);
+          setLatestUpdate(sortedUpdates[0]);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  return (
+    <Layout>
       {/* Hero section */}
       <section className="relative bg-gradient-radial from-music-accent/20 via-transparent to-transparent">
         <div className="music-container py-16 md:py-24">
@@ -118,6 +174,8 @@ const Index = () => {
           </form>
         </div>
       </section>
-    </Layout>;
+    </Layout>
+  );
 };
+
 export default Index;
