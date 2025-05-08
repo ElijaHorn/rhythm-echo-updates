@@ -103,7 +103,7 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ tracks, className }) => {
               <Button
                 variant="ghost" 
                 size="icon"
-                className="bg-music-accent hover:bg-music-accent-hover text-white rounded-full h-10 w-10 flex items-center justify-center"
+                className="bg-gray-500 hover:bg-gray-600 text-white rounded-full h-10 w-10 flex items-center justify-center"
                 onClick={togglePlay}
               >
                 {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
