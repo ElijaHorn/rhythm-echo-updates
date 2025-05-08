@@ -86,7 +86,7 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ tracks, className }) => {
               max={totalDuration}
               step={1}
               onValueChange={handleProgressChange}
-              className="mx-2"
+              className="mx-2 [&>.relative>.absolute]:bg-white [&>.relative]:bg-gray-600"
             />
             <span className="text-xs text-music-400 w-8">{currentTrack.duration}</span>
           </div>
@@ -125,7 +125,7 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ tracks, className }) => {
                 max={100}
                 step={1}
                 onValueChange={handleVolumeChange}
-                className="w-24"
+                className="w-24 [&>.relative>.absolute]:bg-white [&>.relative]:bg-gray-600"
               />
             </div>
           </div>
