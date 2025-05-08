@@ -10,8 +10,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { Music, Upload, FileText, Plus, Save } from "lucide-react";
+import { Music, Upload, FileText, Plus, Save, Edit, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
 
 // Define the interfaces for our data
 interface Track {
@@ -39,7 +58,7 @@ interface Update {
 
 const Admin = () => {
   const navigate = useNavigate();
-
+  
   // State for tracks, releases, and updates
   const [tracks, setTracks] = useState<Track[]>(() => {
     const savedTracks = localStorage.getItem('tracks');
@@ -118,6 +137,11 @@ const Admin = () => {
     ];
   });
 
+  // State for edit mode
+  const [editingTrack, setEditingTrack] = useState<Track | null>(null);
+  const [editingRelease, setEditingRelease] = useState<Release | null>(null);
+  const [editingUpdate, setEditingUpdate] = useState<Update | null>(null);
+
   // Create forms for track, release, and update
   const trackForm = useForm({
     defaultValues: {
@@ -145,44 +169,180 @@ const Admin = () => {
     }
   });
 
+  // Reset forms when switching to edit mode
+  React.useEffect(() => {
+    if (editingTrack) {
+      trackForm.reset({
+        title: editingTrack.title,
+        duration: editingTrack.duration,
+        coverArt: editingTrack.coverArt
+      });
+    }
+  }, [editingTrack, trackForm]);
+
+  React.useEffect(() => {
+    if (editingRelease) {
+      releaseForm.reset({
+        title: editingRelease.title,
+        releaseDate: editingRelease.releaseDate,
+        coverArt: editingRelease.coverArt,
+        tracks: editingRelease.tracks
+      });
+    }
+  }, [editingRelease, releaseForm]);
+
+  React.useEffect(() => {
+    if (editingUpdate) {
+      updateForm.reset({
+        title: editingUpdate.title,
+        date: editingUpdate.date,
+        content: editingUpdate.content,
+        image: editingUpdate.image || ""
+      });
+    }
+  }, [editingUpdate, updateForm]);
+
   // Functions to handle form submissions
   const handleAddTrack = (data: any) => {
-    const newTrack = {
-      id: tracks.length ? Math.max(...tracks.map(t => t.id)) + 1 : 1,
-      ...data
-    };
+    if (editingTrack) {
+      // Update existing track
+      const updatedTracks = tracks.map(track => 
+        track.id === editingTrack.id ? { ...track, ...data } : track
+      );
+      setTracks(updatedTracks);
+      localStorage.setItem('tracks', JSON.stringify(updatedTracks));
+      setEditingTrack(null);
+      toast.success("Track updated successfully!");
+    } else {
+      // Add new track
+      const newTrack = {
+        id: tracks.length ? Math.max(...tracks.map(t => t.id)) + 1 : 1,
+        ...data
+      };
+      
+      const updatedTracks = [...tracks, newTrack];
+      setTracks(updatedTracks);
+      localStorage.setItem('tracks', JSON.stringify(updatedTracks));
+      toast.success("Track added successfully!");
+    }
     
-    const updatedTracks = [...tracks, newTrack];
-    setTracks(updatedTracks);
-    localStorage.setItem('tracks', JSON.stringify(updatedTracks));
-    trackForm.reset();
-    toast.success("Track added successfully!");
+    trackForm.reset({
+      title: "",
+      duration: "",
+      coverArt: "/placeholder.svg"
+    });
   };
 
   const handleAddRelease = (data: any) => {
-    const newRelease = {
-      id: releases.length ? Math.max(...releases.map(r => r.id)) + 1 : 1,
-      ...data
-    };
+    if (editingRelease) {
+      // Update existing release
+      const updatedReleases = releases.map(release => 
+        release.id === editingRelease.id ? { ...release, ...data } : release
+      );
+      setReleases(updatedReleases);
+      localStorage.setItem('releases', JSON.stringify(updatedReleases));
+      setEditingRelease(null);
+      toast.success("Release updated successfully!");
+    } else {
+      // Add new release
+      const newRelease = {
+        id: releases.length ? Math.max(...releases.map(r => r.id)) + 1 : 1,
+        ...data
+      };
+      
+      const updatedReleases = [...releases, newRelease];
+      setReleases(updatedReleases);
+      localStorage.setItem('releases', JSON.stringify(updatedReleases));
+      toast.success("Release added successfully!");
+    }
     
-    const updatedReleases = [...releases, newRelease];
-    setReleases(updatedReleases);
-    localStorage.setItem('releases', JSON.stringify(updatedReleases));
-    releaseForm.reset();
-    toast.success("Release added successfully!");
+    releaseForm.reset({
+      title: "",
+      releaseDate: "",
+      coverArt: "/placeholder.svg",
+      tracks: 1
+    });
   };
 
   const handleAddUpdate = (data: any) => {
-    const newUpdate = {
-      id: updates.length ? Math.max(...updates.map(u => u.id)) + 1 : 1,
-      ...data
-    };
+    if (editingUpdate) {
+      // Update existing update
+      const updatedUpdates = updates.map(update => 
+        update.id === editingUpdate.id ? { ...update, ...data } : update
+      );
+      setUpdates(updatedUpdates);
+      localStorage.setItem('updates', JSON.stringify(updatedUpdates));
+      setEditingUpdate(null);
+      toast.success("Update post updated successfully!");
+    } else {
+      // Add new update
+      const newUpdate = {
+        id: updates.length ? Math.max(...updates.map(u => u.id)) + 1 : 1,
+        ...data
+      };
+      
+      const updatedUpdates = [...updates, newUpdate];
+      setUpdates(updatedUpdates);
+      localStorage.setItem('updates', JSON.stringify(updatedUpdates));
+      toast.success("Update post added successfully!");
+    }
     
-    const updatedUpdates = [...updates, newUpdate];
+    updateForm.reset({
+      title: "",
+      date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+      content: "",
+      image: ""
+    });
+  };
+
+  // Delete functions
+  const handleDeleteTrack = (id: number) => {
+    const updatedTracks = tracks.filter(track => track.id !== id);
+    setTracks(updatedTracks);
+    localStorage.setItem('tracks', JSON.stringify(updatedTracks));
+    toast.success("Track deleted successfully!");
+  };
+
+  const handleDeleteRelease = (id: number) => {
+    const updatedReleases = releases.filter(release => release.id !== id);
+    setReleases(updatedReleases);
+    localStorage.setItem('releases', JSON.stringify(updatedReleases));
+    toast.success("Release deleted successfully!");
+  };
+
+  const handleDeleteUpdate = (id: number) => {
+    const updatedUpdates = updates.filter(update => update.id !== id);
     setUpdates(updatedUpdates);
     localStorage.setItem('updates', JSON.stringify(updatedUpdates));
-    updateForm.reset();
-    toast.success("Update added successfully!");
+    toast.success("Update post deleted successfully!");
+  };
+
+  // Cancel edit mode
+  const handleCancelEdit = (type: 'track' | 'release' | 'update') => {
+    if (type === 'track') {
+      setEditingTrack(null);
+      trackForm.reset({
+        title: "",
+        duration: "",
+        coverArt: "/placeholder.svg"
+      });
+    } else if (type === 'release') {
+      setEditingRelease(null);
+      releaseForm.reset({
+        title: "",
+        releaseDate: "",
+        coverArt: "/placeholder.svg",
+        tracks: 1
+      });
+    } else {
+      setEditingUpdate(null);
+      updateForm.reset({
+        title: "",
+        date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+        content: "",
+        image: ""
+      });
+    }
   };
 
   // Function to handle view navigation
@@ -228,7 +388,9 @@ const Admin = () => {
           {/* Music Tracks Tab */}
           <TabsContent value="music" className="space-y-8">
             <div className="music-card p-6">
-              <h2 className="text-xl font-medium text-white mb-4">Add New Track</h2>
+              <h2 className="text-xl font-medium text-white mb-4">
+                {editingTrack ? "Edit Track" : "Add New Track"}
+              </h2>
               <Form {...trackForm}>
                 <form onSubmit={trackForm.handleSubmit(handleAddTrack)} className="space-y-4">
                   <FormField
@@ -273,10 +435,23 @@ const Admin = () => {
                     )}
                   />
                   
-                  <Button type="submit" className="bg-music-800 hover:bg-music-700 text-white">
-                    <Save className="mr-2 h-4 w-4" />
-                    Add Track
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button type="submit" className="bg-music-800 hover:bg-music-700 text-white">
+                      <Save className="mr-2 h-4 w-4" />
+                      {editingTrack ? "Update Track" : "Add Track"}
+                    </Button>
+                    
+                    {editingTrack && (
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => handleCancelEdit('track')}
+                        className="border-music-700 text-music-300 hover:bg-music-800"
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
                 </form>
               </Form>
             </div>
@@ -284,16 +459,67 @@ const Admin = () => {
             {/* Display current tracks */}
             <div>
               <h2 className="text-xl font-medium text-white mb-4">Current Tracks</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {tracks.map(track => (
-                  <div key={track.id} className="music-card p-4 flex items-center">
-                    <img src={track.coverArt} alt={track.title} className="w-12 h-12 object-cover rounded mr-4" />
-                    <div>
-                      <h3 className="text-white font-medium">{track.title}</h3>
-                      <p className="text-music-400 text-sm">{track.duration}</p>
-                    </div>
-                  </div>
-                ))}
+              <div className="music-card p-0 overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-music-800">
+                    <TableRow className="hover:bg-music-800/80">
+                      <TableHead>Cover Art</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Duration</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {tracks.map(track => (
+                      <TableRow key={track.id} className="hover:bg-music-800/40 border-music-700">
+                        <TableCell className="pl-4">
+                          <img src={track.coverArt} alt={track.title} className="w-10 h-10 object-cover rounded" />
+                        </TableCell>
+                        <TableCell>{track.title}</TableCell>
+                        <TableCell>{track.duration}</TableCell>
+                        <TableCell className="text-right space-x-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => setEditingTrack(track)}
+                            className="hover:bg-music-800 hover:text-white"
+                          >
+                            <Edit size={16} />
+                          </Button>
+                          
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="hover:bg-music-800 hover:text-white"
+                              >
+                                <Trash2 size={16} />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="bg-music-900 border-music-700">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="text-white">Delete Track</AlertDialogTitle>
+                                <AlertDialogDescription className="text-music-300">
+                                  Are you sure you want to delete "{track.title}"? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="bg-music-800 text-white hover:bg-music-700 border-none">Cancel</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={() => handleDeleteTrack(track.id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             </div>
           </TabsContent>
@@ -301,7 +527,9 @@ const Admin = () => {
           {/* Releases Tab */}
           <TabsContent value="releases" className="space-y-8">
             <div className="music-card p-6">
-              <h2 className="text-xl font-medium text-white mb-4">Add New Release</h2>
+              <h2 className="text-xl font-medium text-white mb-4">
+                {editingRelease ? "Edit Release" : "Add New Release"}
+              </h2>
               <Form {...releaseForm}>
                 <form onSubmit={releaseForm.handleSubmit(handleAddRelease)} className="space-y-4">
                   <FormField
@@ -360,10 +588,23 @@ const Admin = () => {
                     )}
                   />
                   
-                  <Button type="submit" className="bg-music-800 hover:bg-music-700 text-white">
-                    <Save className="mr-2 h-4 w-4" />
-                    Add Release
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button type="submit" className="bg-music-800 hover:bg-music-700 text-white">
+                      <Save className="mr-2 h-4 w-4" />
+                      {editingRelease ? "Update Release" : "Add Release"}
+                    </Button>
+                    
+                    {editingRelease && (
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => handleCancelEdit('release')}
+                        className="border-music-700 text-music-300 hover:bg-music-800"
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
                 </form>
               </Form>
             </div>
@@ -374,7 +615,48 @@ const Admin = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {releases.map(release => (
                   <div key={release.id} className="music-card overflow-hidden">
-                    <img src={release.coverArt} alt={release.title} className="w-full aspect-square object-cover" />
+                    <div className="relative">
+                      <img src={release.coverArt} alt={release.title} className="w-full aspect-square object-cover" />
+                      <div className="absolute top-2 right-2 flex space-x-1">
+                        <Button 
+                          size="icon" 
+                          variant="outline" 
+                          className="h-8 w-8 rounded-full bg-black/40 border-white/20 hover:bg-black/60"
+                          onClick={() => setEditingRelease(release)}
+                        >
+                          <Edit size={14} />
+                        </Button>
+                        
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              size="icon" 
+                              variant="outline" 
+                              className="h-8 w-8 rounded-full bg-black/40 border-white/20 hover:bg-black/60 hover:text-red-400"
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="bg-music-900 border-music-700">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="text-white">Delete Release</AlertDialogTitle>
+                              <AlertDialogDescription className="text-music-300">
+                                Are you sure you want to delete "{release.title}"? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="bg-music-800 text-white hover:bg-music-700 border-none">Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteRelease(release.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
                     <div className="p-4">
                       <h3 className="text-white font-medium">{release.title}</h3>
                       <div className="flex justify-between mt-1">
@@ -391,7 +673,9 @@ const Admin = () => {
           {/* Updates Tab */}
           <TabsContent value="updates" className="space-y-8">
             <div className="music-card p-6">
-              <h2 className="text-xl font-medium text-white mb-4">Add New Update</h2>
+              <h2 className="text-xl font-medium text-white mb-4">
+                {editingUpdate ? "Edit Update" : "Add New Update"}
+              </h2>
               <Form {...updateForm}>
                 <form onSubmit={updateForm.handleSubmit(handleAddUpdate)} className="space-y-4">
                   <FormField
@@ -450,10 +734,23 @@ const Admin = () => {
                     )}
                   />
                   
-                  <Button type="submit" className="bg-music-800 hover:bg-music-700 text-white">
-                    <Save className="mr-2 h-4 w-4" />
-                    Add Update
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button type="submit" className="bg-music-800 hover:bg-music-700 text-white">
+                      <Save className="mr-2 h-4 w-4" />
+                      {editingUpdate ? "Update Post" : "Add Update"}
+                    </Button>
+                    
+                    {editingUpdate && (
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => handleCancelEdit('update')}
+                        className="border-music-700 text-music-300 hover:bg-music-800"
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
                 </form>
               </Form>
             </div>
@@ -464,8 +761,51 @@ const Admin = () => {
               <div className="space-y-4">
                 {updates.map(update => (
                   <div key={update.id} className="music-card p-4">
-                    <h3 className="text-white font-medium">{update.title}</h3>
-                    <p className="text-music-400 text-sm mb-2">{update.date}</p>
+                    <div className="flex justify-between">
+                      <div>
+                        <h3 className="text-white font-medium">{update.title}</h3>
+                        <p className="text-music-400 text-sm mb-2">{update.date}</p>
+                      </div>
+                      <div className="flex space-x-1">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="hover:bg-music-800 hover:text-white"
+                          onClick={() => setEditingUpdate(update)}
+                        >
+                          <Edit size={16} />
+                        </Button>
+                        
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="hover:bg-music-800 hover:text-white"
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="bg-music-900 border-music-700">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="text-white">Delete Update</AlertDialogTitle>
+                              <AlertDialogDescription className="text-music-300">
+                                Are you sure you want to delete "{update.title}"? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="bg-music-800 text-white hover:bg-music-700 border-none">Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteUpdate(update.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
                     <p className="text-music-300 line-clamp-2">{update.content}</p>
                     {update.image && (
                       <div className="mt-2">
