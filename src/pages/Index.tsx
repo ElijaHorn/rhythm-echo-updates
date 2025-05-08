@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import MusicPlayer from "../components/MusicPlayer";
@@ -6,60 +5,49 @@ import MusicReleases from "../components/MusicReleases";
 import { Button } from "@/components/ui/button";
 import { CalendarDays } from "lucide-react";
 import { Link } from "react-router-dom";
-
 const Index = () => {
   // State for tracks, releases, and latest update
   const [tracks, setTracks] = useState(() => {
     const savedTracks = localStorage.getItem('tracks');
-    return savedTracks ? JSON.parse(savedTracks) : [
-      {
-        id: 1,
-        title: "Midnight Symphony",
-        duration: "3:45",
-        coverArt: "/placeholder.svg"
-      },
-      {
-        id: 2,
-        title: "Electric Dreams",
-        duration: "4:12",
-        coverArt: "/placeholder.svg"
-      },
-      {
-        id: 3,
-        title: "Ocean Waves",
-        duration: "3:21",
-        coverArt: "/placeholder.svg"
-      }
-    ];
+    return savedTracks ? JSON.parse(savedTracks) : [{
+      id: 1,
+      title: "Midnight Symphony",
+      duration: "3:45",
+      coverArt: "/placeholder.svg"
+    }, {
+      id: 2,
+      title: "Electric Dreams",
+      duration: "4:12",
+      coverArt: "/placeholder.svg"
+    }, {
+      id: 3,
+      title: "Ocean Waves",
+      duration: "3:21",
+      coverArt: "/placeholder.svg"
+    }];
   });
-
   const [releases, setReleases] = useState(() => {
     const savedReleases = localStorage.getItem('releases');
-    return savedReleases ? JSON.parse(savedReleases) : [
-      {
-        id: 1,
-        title: "Neon Nights",
-        releaseDate: "May 2025",
-        coverArt: "/placeholder.svg",
-        tracks: 4
-      },
-      {
-        id: 2,
-        title: "Digital Dreamscape",
-        releaseDate: "January 2025",
-        coverArt: "/placeholder.svg",
-        tracks: 6
-      },
-      {
-        id: 3,
-        title: "First Light",
-        releaseDate: "October 2024",
-        coverArt: "/placeholder.svg",
-        tracks: 5
-      }
-    ];
+    return savedReleases ? JSON.parse(savedReleases) : [{
+      id: 1,
+      title: "Neon Nights",
+      releaseDate: "May 2025",
+      coverArt: "/placeholder.svg",
+      tracks: 4
+    }, {
+      id: 2,
+      title: "Digital Dreamscape",
+      releaseDate: "January 2025",
+      coverArt: "/placeholder.svg",
+      tracks: 6
+    }, {
+      id: 3,
+      title: "First Light",
+      releaseDate: "October 2024",
+      coverArt: "/placeholder.svg",
+      tracks: 5
+    }];
   });
-
   const [latestUpdate, setLatestUpdate] = useState({
     title: "New Album Coming Soon",
     date: "May 5, 2025",
@@ -84,10 +72,8 @@ const Index = () => {
     const handleStorageChange = () => {
       const savedTracks = localStorage.getItem('tracks');
       if (savedTracks) setTracks(JSON.parse(savedTracks));
-      
       const savedReleases = localStorage.getItem('releases');
       if (savedReleases) setReleases(JSON.parse(savedReleases));
-      
       const savedUpdates = localStorage.getItem('updates');
       if (savedUpdates) {
         const updates = JSON.parse(savedUpdates);
@@ -97,13 +83,10 @@ const Index = () => {
         }
       }
     };
-
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
-
-  return (
-    <Layout>
+  return <Layout>
       {/* Hero section */}
       <section className="relative bg-gradient-radial from-music-accent/20 via-transparent to-transparent">
         <div className="music-container py-16 md:py-24">
@@ -160,22 +143,7 @@ const Index = () => {
       </section>
 
       {/* Newsletter section */}
-      <section className="music-container py-16">
-        <div className="music-card p-8 text-center">
-          <h2 className="text-2xl font-semibold text-white mb-4">Stay Updated</h2>
-          <p className="text-music-300 mb-6 max-w-lg mx-auto">
-            Subscribe to get notified about new releases, upcoming events, and exclusive content.
-          </p>
-          <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-            <input type="email" placeholder="Your email address" className="flex-grow px-4 py-2 bg-music-700 border border-music-600 rounded-md text-white placeholder:text-music-400 focus:outline-none focus:ring-2 focus:ring-music-accent" />
-            <Button className="bg-music-accent hover:bg-music-accent-hover text-white">
-              Subscribe
-            </Button>
-          </form>
-        </div>
-      </section>
-    </Layout>
-  );
+      
+    </Layout>;
 };
-
 export default Index;
