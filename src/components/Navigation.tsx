@@ -1,16 +1,21 @@
+
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Music, Calendar, X, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
+  
   const closeMenu = () => {
     setIsOpen(false);
   };
+  
   const navItems = [{
     name: "Music",
     path: "/",
@@ -20,6 +25,7 @@ const Navigation = () => {
     path: "/updates",
     icon: <Calendar className="w-4 h-4 mr-2" />
   }];
+  
   return <header className="sticky top-0 z-40 bg-black/80 backdrop-blur-lg border-b border-music-700">
       <div className="music-container flex items-center justify-between h-16">
         <div className="flex items-center">
@@ -40,7 +46,9 @@ const Navigation = () => {
           
           {/* Admin link - only visible on desktop */}
           <Button variant="ghost" asChild className="text-music-300 hover:text-white hover:bg-music-700 ml-4 border-l border-music-700 pl-4">
-            
+            <Link to="/admin" className="flex items-center">
+              Admin
+            </Link>
           </Button>
         </nav>
 
@@ -65,10 +73,13 @@ const Navigation = () => {
                 </Link>)}
               
               {/* Admin link - also visible on mobile */}
-              
+              <Link to="/admin" className="flex items-center text-2xl font-medium text-music-300 hover:text-white transition-colors" onClick={closeMenu}>
+                Admin
+              </Link>
             </nav>
           </div>}
       </div>
     </header>;
 };
+
 export default Navigation;

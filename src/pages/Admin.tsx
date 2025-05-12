@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { Music, Upload, FileText, Plus, Save, Edit, Trash2 } from "lucide-react";
+import { Music, Upload, FileText, Plus, Save, Edit, Trash2, FileAudio } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +30,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
 
 // Define the interfaces for our data
 interface Track {
@@ -56,8 +56,18 @@ interface Update {
   image?: string;
 }
 
+interface AudioFile {
+  id: number;
+  name: string;
+  size: string;
+  type: string;
+  uploadDate: string;
+  url: string;
+}
+
 const Admin = () => {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // State for tracks, releases, and updates
   const [tracks, setTracks] = useState<Track[]>(() => {
@@ -136,11 +146,23 @@ const Admin = () => {
       }
     ];
   });
+  
+  // State for audio files
+  const [audioFiles, setAudioFiles] = useState<AudioFile[]>(() => {
+    const savedAudioFiles = localStorage.getItem('audioFiles');
+    return savedAudioFiles ? JSON.parse(savedAudioFiles) : [];
+  });
+  
+  // Upload state
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [currentFileName, setCurrentFileName] = useState("");
 
   // State for edit mode
   const [editingTrack, setEditingTrack] = useState<Track | null>(null);
   const [editingRelease, setEditingRelease] = useState<Release | null>(null);
   const [editingUpdate, setEditingUpdate] = useState<Update | null>(null);
+  const [editingAudio, setEditingAudio] = useState<AudioFile | null>(null);
 
   // Create forms for track, release, and update
   const trackForm = useForm({
@@ -166,6 +188,12 @@ const Admin = () => {
       date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
       content: "",
       image: ""
+    }
+  });
+  
+  const audioForm = useForm({
+    defaultValues: {
+      name: ""
     }
   });
 
@@ -201,6 +229,14 @@ const Admin = () => {
       });
     }
   }, [editingUpdate, updateForm]);
+  
+  React.useEffect(() => {
+    if (editingAudio) {
+      audioForm.reset({
+        name: editingAudio.name
+      });
+    }
+  }, [editingAudio, audioForm]);
 
   // Functions to handle form submissions
   const handleAddTrack = (data: any) => {
@@ -294,6 +330,90 @@ const Admin = () => {
       image: ""
     });
   };
+  
+  // Handle audio file upload
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      
+      // Check if it's a wav file
+      if (file.type !== "audio/wav") {
+        toast.error("Only .wav files are allowed");
+        return;
+      }
+      
+      setUploading(true);
+      setCurrentFileName(file.name);
+      
+      // Simulate upload progress
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 5;
+        setUploadProgress(progress);
+        
+        if (progress >= 100) {
+          clearInterval(interval);
+          
+          // Create file URL (in real app, this would be a server URL)
+          const fileUrl = URL.createObjectURL(file);
+          
+          // Format file size
+          const formatFileSize = (bytes: number): string => {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+          };
+          
+          const newAudioFile = {
+            id: audioFiles.length ? Math.max(...audioFiles.map(a => a.id)) + 1 : 1,
+            name: file.name,
+            size: formatFileSize(file.size),
+            type: file.type,
+            uploadDate: new Date().toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            }),
+            url: fileUrl
+          };
+          
+          const updatedAudioFiles = [...audioFiles, newAudioFile];
+          setAudioFiles(updatedAudioFiles);
+          localStorage.setItem('audioFiles', JSON.stringify(updatedAudioFiles));
+          
+          setUploading(false);
+          setUploadProgress(0);
+          setCurrentFileName("");
+          
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+          
+          toast.success("Audio file uploaded successfully!");
+        }
+      }, 100);
+    }
+  };
+  
+  // Handle audio file rename
+  const handleRenameAudio = (data: any) => {
+    if (editingAudio) {
+      const updatedAudioFiles = audioFiles.map(audio => 
+        audio.id === editingAudio.id ? { ...audio, name: data.name } : audio
+      );
+      setAudioFiles(updatedAudioFiles);
+      localStorage.setItem('audioFiles', JSON.stringify(updatedAudioFiles));
+      setEditingAudio(null);
+      toast.success("Audio file renamed successfully!");
+      
+      audioForm.reset({ name: "" });
+    }
+  };
 
   // Delete functions
   const handleDeleteTrack = (id: number) => {
@@ -316,9 +436,16 @@ const Admin = () => {
     localStorage.setItem('updates', JSON.stringify(updatedUpdates));
     toast.success("Update post deleted successfully!");
   };
+  
+  const handleDeleteAudio = (id: number) => {
+    const updatedAudioFiles = audioFiles.filter(audio => audio.id !== id);
+    setAudioFiles(updatedAudioFiles);
+    localStorage.setItem('audioFiles', JSON.stringify(updatedAudioFiles));
+    toast.success("Audio file deleted successfully!");
+  };
 
   // Cancel edit mode
-  const handleCancelEdit = (type: 'track' | 'release' | 'update') => {
+  const handleCancelEdit = (type: 'track' | 'release' | 'update' | 'audio') => {
     if (type === 'track') {
       setEditingTrack(null);
       trackForm.reset({
@@ -334,7 +461,7 @@ const Admin = () => {
         coverArt: "/placeholder.svg",
         tracks: 1
       });
-    } else {
+    } else if (type === 'update') {
       setEditingUpdate(null);
       updateForm.reset({
         title: "",
@@ -342,6 +469,9 @@ const Admin = () => {
         content: "",
         image: ""
       });
+    } else {
+      setEditingAudio(null);
+      audioForm.reset({ name: "" });
     }
   };
 
@@ -362,7 +492,7 @@ const Admin = () => {
             </Button>
           </div>
           <p className="text-xl text-music-300 mt-4">
-            Manage your music, releases, and updates here.
+            Manage your music, releases, updates, and audio files here.
           </p>
         </div>
       </section>
@@ -382,6 +512,10 @@ const Admin = () => {
             <TabsTrigger value="updates" className="data-[state=active]:bg-music-700">
               <Plus className="mr-2 h-4 w-4" />
               Updates
+            </TabsTrigger>
+            <TabsTrigger value="audio" className="data-[state=active]:bg-music-700">
+              <FileAudio className="mr-2 h-4 w-4" />
+              Audio Files
             </TabsTrigger>
           </TabsList>
           
@@ -802,25 +936,3 @@ const Admin = () => {
                                 Delete
                               </AlertDialogAction>
                             </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-                    <p className="text-music-300 line-clamp-2">{update.content}</p>
-                    {update.image && (
-                      <div className="mt-2">
-                        <span className="text-sm text-music-400">Has image: Yes</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </section>
-    </Layout>
-  );
-};
-
-export default Admin;
