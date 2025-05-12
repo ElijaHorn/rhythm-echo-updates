@@ -65,9 +65,7 @@ const Navigation = () => {
                 </Link>)}
               
               {/* Admin link - also visible on mobile */}
-              <Link to="/admin" className="flex items-center text-2xl font-medium text-music-300 hover:text-white transition-colors" onClick={closeMenu}>
-                Admin
-              </Link>
+              
             </nav>
           </div>}
       </div>
